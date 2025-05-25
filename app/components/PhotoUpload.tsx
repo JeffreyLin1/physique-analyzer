@@ -145,6 +145,30 @@ export default function PhotoUpload({ onImageUpload, status = 'idle', uploadedIm
             </button>
           </div>
         </div>
+      ) : status === 'initializing' ? (
+        // Initializing state - Show loading with uploaded image
+        <div className="relative border-2 border-blue-300 dark:border-blue-600 rounded-xl overflow-hidden h-64">
+          {uploadedImage && (
+            <Image
+              src={uploadedImage}
+              alt="Uploaded physique photo"
+              fill
+              className="object-cover opacity-30"
+            />
+          )}
+          
+          {/* Initialization Overlay */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex items-center space-x-3">
+              <div className="flex-shrink-0 w-6 h-6">
+                <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-blue-500"></div>
+              </div>
+              <span className="text-white font-medium text-sm whitespace-nowrap drop-shadow-lg">
+                {currentStep || 'Loading AI models...'}
+              </span>
+            </div>
+          </div>
+        </div>
       ) : status === 'analyzing' ? (
         // Full image with analysis overlay
         <div className="relative border-2 border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden h-64">

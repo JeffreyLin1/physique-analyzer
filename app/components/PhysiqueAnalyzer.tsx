@@ -19,7 +19,7 @@ export interface PhysiqueRatings {
 }
 
 export default function PhysiqueAnalyzer() {
-  const [status, setStatus] = useState<AnalysisStatus>('initializing')
+  const [status, setStatus] = useState<AnalysisStatus>('idle')
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [currentStep, setCurrentStep] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
@@ -33,31 +33,19 @@ export default function PhysiqueAnalyzer() {
     overall: 0
   })
 
-  // Initialize AI models on component mount
-  useEffect(() => {
-    const initializeAI = async () => {
-      try {
-        await physiqueAnalyzer.initialize((step: AnalysisStep) => {
-          setCurrentStep(step.step)
-        })
-        setStatus('idle')
-        setCurrentStep('')
-      } catch (error) {
-        console.error('Failed to initialize AI models:', error)
-        setError('Failed to initialize AI models. Please refresh the page to try again.')
-        setStatus('error')
-      }
-    }
-
-    initializeAI()
-  }, [])
-
   const handleImageUpload = async (imageUrl: string, imageElement: HTMLImageElement) => {
     setUploadedImage(imageUrl)
-    setStatus('analyzing')
+    setStatus('initializing')
     setError(null)
     
     try {
+      // Initialize AI models when user uploads image
+      await physiqueAnalyzer.initialize((step: AnalysisStep) => {
+        setCurrentStep(step.step)
+      })
+      
+      // Now analyze the image
+      setStatus('analyzing')
       const metrics: PhysiqueMetrics = await physiqueAnalyzer.analyzePhysique(
         imageElement,
         (step: AnalysisStep) => {
@@ -142,28 +130,27 @@ export default function PhysiqueAnalyzer() {
               <p className="text-blue-700 dark:text-blue-300">
                 {currentStep || 'Loading...'}
               </p>
+              <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
+                Loading models for the first time...
+              </p>
             </div>
           )}
 
           {/* Upload Section - Top */}
-          {status !== 'initializing' && (
-            <PhotoUpload 
-              onImageUpload={handleImageUpload} 
-              status={status}
-              uploadedImage={uploadedImage}
-              currentStep={currentStep}
-              onReset={handleReset}
-            />
-          )}
+          <PhotoUpload 
+            onImageUpload={handleImageUpload} 
+            status={status}
+            uploadedImage={uploadedImage}
+            currentStep={currentStep}
+            onReset={handleReset}
+          />
 
           {/* Ratings Section - Bottom */}
-          {status !== 'initializing' && (
-            <RatingsDisplay 
-              ratings={ratings}
-              status={status}
-              onReset={handleReset}
-            />
-          )}
+          <RatingsDisplay 
+            ratings={ratings}
+            status={status}
+            onReset={handleReset}
+          />
 
         </div>
       </main>

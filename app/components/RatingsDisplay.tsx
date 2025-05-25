@@ -81,7 +81,7 @@ export default function RatingsDisplay({ ratings, status, onReset }: RatingsDisp
 
   const getRatingText = (rating: number, currentStatus: AnalysisStatus) => {
     if (currentStatus === 'error') return 'Analysis Failed'
-    if (currentStatus !== 'completed') return 'Awaiting Analysis'
+    if (currentStatus !== 'completed') return ''
     if (rating >= 9) return 'Excellent'
     if (rating >= 7) return 'Good'
     if (rating >= 5) return 'Average'
