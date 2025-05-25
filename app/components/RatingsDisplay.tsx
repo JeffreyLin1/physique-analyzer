@@ -80,6 +80,7 @@ export default function RatingsDisplay({ ratings, status, onReset }: RatingsDisp
   }, [ratings, status])
 
   const getRatingText = (rating: number, currentStatus: AnalysisStatus) => {
+    if (currentStatus === 'error') return 'Analysis Failed'
     if (currentStatus !== 'completed') return 'Awaiting Analysis'
     if (rating >= 9) return 'Excellent'
     if (rating >= 7) return 'Good'
@@ -89,6 +90,7 @@ export default function RatingsDisplay({ ratings, status, onReset }: RatingsDisp
   }
 
   const getRatingColor = (rating: number, currentStatus: AnalysisStatus) => {
+    if (currentStatus === 'error') return 'text-red-600 dark:text-red-400'
     if (currentStatus !== 'completed') return 'text-gray-500 dark:text-gray-400'
     if (rating >= 9) return 'text-green-600 dark:text-green-400'
     if (rating >= 7) return 'text-blue-600 dark:text-blue-400'

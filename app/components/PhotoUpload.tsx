@@ -1,53 +1,51 @@
 'use client'
 
-import { useCallback, useState, useEffect } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { AnalysisStatus } from './PhysiqueAnalyzer'
 
 interface PhotoUploadProps {
-  onImageUpload: (imageUrl: string) => void
+  onImageUpload: (imageUrl: string, imageElement: HTMLImageElement) => void
   status?: AnalysisStatus
   uploadedImage?: string | null
+  currentStep?: string
   onReset: () => void
 }
 
-export default function PhotoUpload({ onImageUpload, status = 'idle', uploadedImage, onReset }: PhotoUploadProps) {
+export default function PhotoUpload({ onImageUpload, status = 'idle', uploadedImage, currentStep, onReset }: PhotoUploadProps) {
   const [isDragging, setIsDragging] = useState(false)
-  const [currentStep, setCurrentStep] = useState(0)
-
-  const analysisSteps = [
-    'Loading image...',
-    'Initializing AI models...',
-    'Detecting muscle groups...',
-    'Analyzing proportions...',
-    'Computing ratings...',
-    'Finalizing assessment...'
-  ]
-
-  // Handle analysis steps animation
-  useEffect(() => {
-    if (status === 'analyzing') {
-      const interval = setInterval(() => {
-        setCurrentStep((prev) => {
-          if (prev < analysisSteps.length - 1) {
-            return prev + 1
-          }
-          return 0 // Reset to create continuous cycle
-        })
-      }, 500)
-
-      return () => clearInterval(interval)
-    } else if (status === 'completed') {
-      setCurrentStep(analysisSteps.length)
-    } else {
-      setCurrentStep(0)
-    }
-  }, [status, analysisSteps.length])
+  const imageRef = useRef<HTMLImageElement>(null)
 
   const handleFile = useCallback((file: File) => {
     if (file && file.type.startsWith('image/')) {
       const url = URL.createObjectURL(file)
-      onImageUpload(url)
+      
+      // Create an image element to pass to the analysis function
+      const img = new (window as any).Image() as HTMLImageElement
+      img.onload = () => {
+        onImageUpload(url, img)
+      }
+      img.onerror = () => {
+        console.error('Failed to load image')
+        // Still call onImageUpload with a placeholder element if image fails to load
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          canvas.width = 300
+          canvas.height = 300
+          ctx.fillStyle = '#f0f0f0'
+          ctx.fillRect(0, 0, 300, 300)
+          ctx.fillStyle = '#888'
+          ctx.font = '16px Arial'
+          ctx.textAlign = 'center'
+          ctx.fillText('Image Load Error', 150, 150)
+        }
+        const placeholderImg = new (window as any).Image() as HTMLImageElement
+        placeholderImg.src = canvas.toDataURL()
+        onImageUpload(url, placeholderImg)
+      }
+      img.crossOrigin = 'anonymous'
+      img.src = url
     }
   }, [onImageUpload])
 
@@ -153,6 +151,7 @@ export default function PhotoUpload({ onImageUpload, status = 'idle', uploadedIm
           {/* Background Image */}
           {uploadedImage && (
             <Image
+              ref={imageRef}
               src={uploadedImage}
               alt="Uploaded physique photo"
               fill
@@ -160,15 +159,35 @@ export default function PhotoUpload({ onImageUpload, status = 'idle', uploadedIm
             />
           )}
           
-          {/* Analysis Overlay - Single Step Display */}
+          {/* Analysis Overlay - Show current step from AI service */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="flex items-center space-x-3">
               <div className="flex-shrink-0 w-5 h-5">
                 <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-blue-500"></div>
               </div>
               <span className="text-white font-medium text-sm whitespace-nowrap drop-shadow-lg">
-                {analysisSteps[currentStep]}
+                {currentStep || 'Processing...'}
               </span>
+            </div>
+          </div>
+        </div>
+      ) : status === 'error' ? (
+        // Error state - show image with error overlay
+        <div className="relative border-2 border-red-300 dark:border-red-600 rounded-xl overflow-hidden h-64">
+          {uploadedImage && (
+            <Image
+              src={uploadedImage}
+              alt="Uploaded physique photo"
+              fill
+              className="object-cover opacity-30"
+            />
+          )}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-red-600 dark:text-red-400 text-center">
+              <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.855-.833-2.625 0L4.188 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <p className="font-medium">Analysis Failed</p>
             </div>
           </div>
         </div>
@@ -189,8 +208,8 @@ export default function PhotoUpload({ onImageUpload, status = 'idle', uploadedIm
         </div>
       )}
 
-      {/* Reset button for completed state */}
-      {status === 'completed' && (
+      {/* Reset button for completed/error state */}
+      {(status === 'completed' || status === 'error') && (
         <div className="mt-4 text-center">
           <button
             onClick={onReset}
