@@ -120,22 +120,6 @@ export default function PhysiqueAnalyzer() {
             </div>
           )}
 
-          {/* Initialization Status */}
-          {status === 'initializing' && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-2">
-                Initializing AI Models
-              </h3>
-              <p className="text-blue-700 dark:text-blue-300">
-                {currentStep || 'Loading...'}
-              </p>
-              <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
-                Loading models for the first time...
-              </p>
-            </div>
-          )}
-
           {/* Upload Section - Top */}
           <PhotoUpload 
             onImageUpload={handleImageUpload} 
